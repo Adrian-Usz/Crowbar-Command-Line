@@ -1,3 +1,9 @@
+Forked version to also include compiling from command line (Still WIP)
+
+Shoutout to the origial person who made the decompiling feature.
+
+Orginal Description
+
 # Crowbar-Command-Line
 A fork of the Crowbar source code designed to allow command line de-compiling of source engine models. Mainly meant for automation and use in other programs that require the de-compilation of models.
 
