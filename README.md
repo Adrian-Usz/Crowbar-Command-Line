@@ -2,6 +2,8 @@ Forked version to also include compiling from command line (Still WIP)
 
 Shoutout to the origial person who made the decompiling feature.
 
+BASED ON CROWBAR 0.68
+
 Orginal Description
 
 # Crowbar-Command-Line
