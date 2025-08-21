@@ -6,8 +6,6 @@ Shoutout to UltraTechX  who made the decompiling feature.
 
 BASED ON CROWBAR 0.68
 
-BASED ON CROWBAR 0.68
-
 Orginal Description
 
 # Crowbar-Command-Line
