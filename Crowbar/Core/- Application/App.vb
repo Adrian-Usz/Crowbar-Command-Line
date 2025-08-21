@@ -77,55 +77,68 @@ Public Class App
         Dim clArgs() As String = Environment.GetCommandLineArgs()
         ' Hold the command line values
         Dim mdlPa As String = String.Empty
-        Dim mdlOPa As String = String.Empty
+		Dim outPath As String = String.Empty 'Decomp and Comp now share this variable for the CLI'
 
-        Dim OSName As String = Environment.OSVersion.VersionString
-        If OSName.Contains("Windows") Then
-            AttachConsole(-1)
-        End If
+		'For the CLI compile part' 
+		Dim qcPath As String = String.Empty
 
-        ' Test to see if two switchs and two values were passed in
-        ' if yes parse the array
-        If clArgs.Count() >= 3 Then
-            For i As Integer = 1 To 3 Step 2
-                If i < clArgs.Count() Then
-                    If clArgs(i) = "-p" Then
-                        mdlPa = clArgs(i + 1)
-                    ElseIf clArgs(i) = "-o" Then
-                        mdlOPa = clArgs(i + 1)
-                    End If
-                End If
-            Next
-        End If
+		'Me.theCompiler = New Compiler()'
 
-        Console.WriteLine(mdlPa)
+		Dim OSName As String = Environment.OSVersion.VersionString
+		If OSName.Contains("Windows") Then
+			AttachConsole(-1)
+		End If
 
-        If mdlOPa Is String.Empty And mdlPa IsNot String.Empty Then
-            If Not mdlPa.LastIndexOf("\") = -1 Then
-                mdlOPa = mdlPa.Substring(0, mdlPa.LastIndexOf("\"))
-            Else
-                If Not mdlPa.LastIndexOf("/") = -1 Then
-                    mdlOPa = mdlPa.Substring(0, mdlPa.LastIndexOf("/"))
-                End If
-            End If
-        End If
+		' Test to see if two switchs and two values were passed in
+		' if yes parse the array
+		If clArgs.Count() >= 3 Then
+			For i As Integer = 1 To 3 Step 2
+				If i < clArgs.Count() Then
+					If clArgs(i) = "-p" Then
+						mdlPa = clArgs(i + 1)
+					ElseIf clArgs(i) = "-c" Then
+						qcPath = clArgs(i + 1)
+					ElseIf clArgs(i) = "-o" Then
+						outPath = clArgs(i + 1)
+					End If
+				End If
+			Next
+		End If
 
-        Console.WriteLine(mdlOPa)
+		Console.WriteLine(mdlPa)
+		Console.WriteLine(qcPath)
 
-        If mdlPa IsNot String.Empty And mdlOPa IsNot String.Empty Then
-            Me.theDecompiler = New Decompiler(mdlPa, mdlOPa)
-        Else
-            Console.WriteLine("Usage: -p ""Path\To\File.mdl"" -o ""Path\To\Output\Folder""")
-            Console.WriteLine("Alternate Usage (if output folder is same): -p ""Path\To\File.mdl""")
-        End If
+		If outPath Is String.Empty And mdlPa IsNot String.Empty Then
+			If Not mdlPa.LastIndexOf("\") = -1 Then
+				outPath = mdlPa.Substring(0, mdlPa.LastIndexOf("\"))
+			Else
+				If Not mdlPa.LastIndexOf("/") = -1 Then
+					outPath = mdlPa.Substring(0, mdlPa.LastIndexOf("/"))
+				End If
+			End If
+		End If
+
+		Console.WriteLine(outPath)
+
+		If mdlPa IsNot String.Empty And outPath IsNot String.Empty Then
+			Me.theDecompiler = New Decompiler(mdlPa, outPath)
+		ElseIf qcPath IsNot String.Empty And outPath IsNot String.Empty Then
+			Me.theCompiler = New Compiler(qcPath, outPath)
+		Else
+			Console.WriteLine("Usage: -p ""Path\To\File.mdl"" -o ""Path\To\Output\Folder""")
+			Console.WriteLine("Alternate Usage (if output folder is same): -p ""Path\To\File.mdl""")
+			Console.WriteLine("For compiling | Usage: -c ""Path\To\File.qc"" -o ""Path\To\Output\Folder""")
+		End If
     End Sub
 
 	Private Sub Free()
 		If Me.theSettings IsNot Nothing Then
 			Me.SaveAppSettings()
 		End If
-		'If Me.theCompiler IsNot Nothing Then
-		'End If
+
+		If Me.theCompiler IsNot Nothing Then
+			Me.SaveAppSettings()
+		End If
 	End Sub
 
 #End Region

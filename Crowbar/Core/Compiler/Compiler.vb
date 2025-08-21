@@ -6,7 +6,7 @@ Public Class Compiler
 
 #Region "Create and Destroy"
 
-	Public Sub New()
+	Public Sub New(qcPath As String, outPath As String)
 		MyBase.New()
 
 		Me.theCompiledLogFiles = New BindingListEx(Of String)()
@@ -15,6 +15,14 @@ Public Class Compiler
 		Me.WorkerReportsProgress = True
 		Me.WorkerSupportsCancellation = True
 		AddHandler Me.DoWork, AddressOf Me.Compiler_DoWork
+
+
+		TheApp.Settings.CompileQcPathFileName = qcPath
+		Me.theOutputPath = outPath
+		TheApp.Settings.DecompileMode = InputOptions.File
+		TheApp.Settings.DecompileQcOnlyChangedMaterialsInTextureGroupLinesIsChecked = False
+		TheApp.Settings.DecompileOverrideMdlVersion = SupportedMdlVersion.MDLv48
+		Me.Compile()
 	End Sub
 
 #End Region
