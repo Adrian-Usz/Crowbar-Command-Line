@@ -6,6 +6,8 @@ Shoutout to UltraTechX  who made the decompiling feature.
 
 BASED ON CROWBAR 0.68
 
+Also if you want to compile it yourself, seems to compile fine with Any CPU option or x86 option (I dont think it matters) with visual studio 2022 preview
+
 Orginal Description
 
 # Crowbar-Command-Line
