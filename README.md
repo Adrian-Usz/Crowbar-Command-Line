@@ -2,7 +2,7 @@ Forked version to also include compiling from command line
 
 Command Line Arguments: ``CrowbarCommandLineDecomp.exe -c ""Path\To\File.qc"" -o ""Path\To\Output\Folder``
 
-Shoutout to the origial person who made the decompiling feature.
+Shoutout to UltraTechX  who made the decompiling feature.
 
 BASED ON CROWBAR 0.68
 
