@@ -25,6 +25,10 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore
 
+    # Optional: Add test step if you have tests
+    # - name: Test
+    #   run: dotnet test --no-build --verbosity normal
+
     - name: Build succeeded!
       if: success()
       run: echo "Build finished successfully!"
