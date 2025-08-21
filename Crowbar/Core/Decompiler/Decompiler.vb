@@ -6,7 +6,7 @@ Public Class Decompiler
 
 #Region "Create and Destroy"
 
-    Public Sub New(mdlPa As String, mdlOPa As String)
+    Public Sub New(mdlPa As String, outPath As String)
         MyBase.New()
 
         Me.theDecompiledQcFiles = New BindingListEx(Of String)()
@@ -26,7 +26,7 @@ Public Class Decompiler
         AddHandler Me.DoWork, AddressOf Me.Decompiler_DoWork
 
         TheApp.Settings.DecompileMdlPathFileName = mdlPa
-        Me.theOutputPath = mdlOPa
+        Me.theOutputPath = outPath
         TheApp.Settings.DecompileMode = InputOptions.File
         TheApp.Settings.DecompileQcOnlyChangedMaterialsInTextureGroupLinesIsChecked = False
         TheApp.Settings.DecompileOverrideMdlVersion = SupportedMdlVersion.MDLv48
@@ -42,26 +42,26 @@ Public Class Decompiler
 #Region "Methods"
 
     Public Sub Run()
-		Me.RunWorkerAsync()
-	End Sub
+        Me.RunWorkerAsync()
+    End Sub
 
-	Public Sub SkipCurrentModel()
-		'NOTE: This might have thread race condition, but it probably doesn't matter.
-		Me.theSkipCurrentModelIsActive = True
-	End Sub
+    Public Sub SkipCurrentModel()
+        'NOTE: This might have thread race condition, but it probably doesn't matter.
+        Me.theSkipCurrentModelIsActive = True
+    End Sub
 
-	Public Function GetOutputPathFileName(ByVal relativePathFileName As String) As String
-		Dim pathFileName As String
+    Public Function GetOutputPathFileName(ByVal relativePathFileName As String) As String
+        Dim pathFileName As String
 
-		pathFileName = Path.Combine(Me.theOutputPath, relativePathFileName)
-		pathFileName = Path.GetFullPath(pathFileName)
+        pathFileName = Path.Combine(Me.theOutputPath, relativePathFileName)
+        pathFileName = Path.GetFullPath(pathFileName)
 
-		Return pathFileName
-	End Function
+        Return pathFileName
+    End Function
 
-	Public Function GetOutputPathFolderOrFileName() As String
-		Return Me.theOutputPathOrModelOutputFileName
-	End Function
+    Public Function GetOutputPathFolderOrFileName() As String
+        Return Me.theOutputPathOrModelOutputFileName
+    End Function
 
 #End Region
 
@@ -71,127 +71,127 @@ Public Class Decompiler
 
 #Region "Private Methods in Background Thread"
 
-	Private Sub Decompiler_DoWork(ByVal sender As System.Object, ByVal e As System.ComponentModel.DoWorkEventArgs)
-		Me.ReportProgress(0, "")
+    Private Sub Decompiler_DoWork(ByVal sender As System.Object, ByVal e As System.ComponentModel.DoWorkEventArgs)
+        Me.ReportProgress(0, "")
 
-		Me.theOutputPath = Me.GetOutputPath()
+        Me.theOutputPath = Me.GetOutputPath()
 
-		Dim status As AppEnums.StatusMessage
-		If Me.DecompilerInputsAreValid() Then
-			status = Me.Decompile()
-		Else
-			status = StatusMessage.Error
-		End If
-		e.Result = Me.GetDecompilerOutputs(status)
+        Dim status As AppEnums.StatusMessage
+        If Me.DecompilerInputsAreValid() Then
+            status = Me.Decompile()
+        Else
+            status = StatusMessage.Error
+        End If
+        e.Result = Me.GetDecompilerOutputs(status)
 
-		If Me.CancellationPending Then
-			e.Cancel = True
-		End If
-	End Sub
+        If Me.CancellationPending Then
+            e.Cancel = True
+        End If
+    End Sub
 
-	Private Function GetOutputPath() As String
-		Dim outputPath As String
+    Private Function GetOutputPath() As String
+        Dim outputPath As String
 
-		If TheApp.Settings.DecompileOutputFolderOption = DecompileOutputPathOptions.Subfolder Then
-			If File.Exists(TheApp.Settings.DecompileMdlPathFileName) Then
-				outputPath = Path.Combine(FileManager.GetPath(TheApp.Settings.DecompileMdlPathFileName), TheApp.Settings.DecompileOutputSubfolderName)
-			ElseIf Directory.Exists(TheApp.Settings.DecompileMdlPathFileName) Then
-				outputPath = Path.GetFullPath(Path.Combine(TheApp.Settings.DecompileMdlPathFileName, TheApp.Settings.DecompileOutputSubfolderName))
-			Else
-				outputPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-			End If
-		Else
-			outputPath = TheApp.Settings.DecompileOutputFullPath
-		End If
+        If TheApp.Settings.DecompileOutputFolderOption = DecompileOutputPathOptions.Subfolder Then
+            If File.Exists(TheApp.Settings.DecompileMdlPathFileName) Then
+                outputPath = Path.Combine(FileManager.GetPath(TheApp.Settings.DecompileMdlPathFileName), TheApp.Settings.DecompileOutputSubfolderName)
+            ElseIf Directory.Exists(TheApp.Settings.DecompileMdlPathFileName) Then
+                outputPath = Path.GetFullPath(Path.Combine(TheApp.Settings.DecompileMdlPathFileName, TheApp.Settings.DecompileOutputSubfolderName))
+            Else
+                outputPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            End If
+        Else
+            outputPath = TheApp.Settings.DecompileOutputFullPath
+        End If
 
-		Return outputPath
-	End Function
+        Return outputPath
+    End Function
 
-	Private Function DecompilerInputsAreValid() As Boolean
-		Dim inputsAreValid As Boolean
+    Private Function DecompilerInputsAreValid() As Boolean
+        Dim inputsAreValid As Boolean
 
-		If String.IsNullOrEmpty(TheApp.Settings.DecompileMdlPathFileName) Then
-			inputsAreValid = False
-		Else
-			inputsAreValid = FileManager.PathExistsAfterTryToCreate(Me.theOutputPath)
-		End If
+        If String.IsNullOrEmpty(TheApp.Settings.DecompileMdlPathFileName) Then
+            inputsAreValid = False
+        Else
+            inputsAreValid = FileManager.PathExistsAfterTryToCreate(Me.theOutputPath)
+        End If
 
-		Return inputsAreValid
-	End Function
+        Return inputsAreValid
+    End Function
 
-	Private Function GetDecompilerOutputs(ByVal status As AppEnums.StatusMessage) As DecompilerOutputInfo
-		Dim decompileResultInfo As New DecompilerOutputInfo()
+    Private Function GetDecompilerOutputs(ByVal status As AppEnums.StatusMessage) As DecompilerOutputInfo
+        Dim decompileResultInfo As New DecompilerOutputInfo()
 
-		decompileResultInfo.theStatus = status
+        decompileResultInfo.theStatus = status
 
-		If TheApp.Settings.DecompileQcFileIsChecked Then
-			decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledQcFiles
-		ElseIf TheApp.Settings.DecompileReferenceMeshSmdFileIsChecked Then
-			decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledFirstRefSmdFiles
-		ElseIf TheApp.Settings.DecompileLodMeshSmdFilesIsChecked Then
-			decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledFirstLodSmdFiles
-		ElseIf TheApp.Settings.DecompilePhysicsMeshSmdFileIsChecked Then
-			decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledPhysicsFiles
-		ElseIf TheApp.Settings.DecompileVertexAnimationVtaFileIsChecked Then
-			decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledVtaFiles
-		ElseIf TheApp.Settings.DecompileBoneAnimationSmdFilesIsChecked Then
-			decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledFirstBoneAnimSmdFiles
-		ElseIf TheApp.Settings.DecompileProceduralBonesVrdFileIsChecked Then
-			decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledVrdFiles
-		ElseIf TheApp.Settings.DecompileDeclareSequenceQciFileIsChecked Then
-			decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledDeclareSequenceQciFiles
-		ElseIf TheApp.Settings.DecompileTextureBmpFilesIsChecked Then
-			decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledFirstTextureBmpFiles
-		ElseIf TheApp.Settings.DecompileLogFileIsChecked Then
-			decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledLogFiles
-		Else
-			decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledFirstDebugFiles
-		End If
+        If TheApp.Settings.DecompileQcFileIsChecked Then
+            decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledQcFiles
+        ElseIf TheApp.Settings.DecompileReferenceMeshSmdFileIsChecked Then
+            decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledFirstRefSmdFiles
+        ElseIf TheApp.Settings.DecompileLodMeshSmdFilesIsChecked Then
+            decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledFirstLodSmdFiles
+        ElseIf TheApp.Settings.DecompilePhysicsMeshSmdFileIsChecked Then
+            decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledPhysicsFiles
+        ElseIf TheApp.Settings.DecompileVertexAnimationVtaFileIsChecked Then
+            decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledVtaFiles
+        ElseIf TheApp.Settings.DecompileBoneAnimationSmdFilesIsChecked Then
+            decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledFirstBoneAnimSmdFiles
+        ElseIf TheApp.Settings.DecompileProceduralBonesVrdFileIsChecked Then
+            decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledVrdFiles
+        ElseIf TheApp.Settings.DecompileDeclareSequenceQciFileIsChecked Then
+            decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledDeclareSequenceQciFiles
+        ElseIf TheApp.Settings.DecompileTextureBmpFilesIsChecked Then
+            decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledFirstTextureBmpFiles
+        ElseIf TheApp.Settings.DecompileLogFileIsChecked Then
+            decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledLogFiles
+        Else
+            decompileResultInfo.theDecompiledRelativePathFileNames = Me.theDecompiledFirstDebugFiles
+        End If
 
-		If decompileResultInfo.theDecompiledRelativePathFileNames.Count <= 0 OrElse Me.theDecompiledQcFiles.Count <= 0 Then
-			Me.theOutputPathOrModelOutputFileName = ""
-			'ElseIf decompileResultInfo.theDecompiledRelativePathFileNames.Count = 1 Then
-			'	Me.theOutputPathOrModelOutputFileName = decompileResultInfo.theDecompiledRelativePathFileNames(0)
-		Else
-			Me.theOutputPathOrModelOutputFileName = Me.theOutputPath
-		End If
+        If decompileResultInfo.theDecompiledRelativePathFileNames.Count <= 0 OrElse Me.theDecompiledQcFiles.Count <= 0 Then
+            Me.theOutputPathOrModelOutputFileName = ""
+            'ElseIf decompileResultInfo.theDecompiledRelativePathFileNames.Count = 1 Then
+            '	Me.theOutputPathOrModelOutputFileName = decompileResultInfo.theDecompiledRelativePathFileNames(0)
+        Else
+            Me.theOutputPathOrModelOutputFileName = Me.theOutputPath
+        End If
 
-		Return decompileResultInfo
-	End Function
+        Return decompileResultInfo
+    End Function
 
-	Private Function Decompile() As AppEnums.StatusMessage
-		Dim status As AppEnums.StatusMessage = StatusMessage.Success
+    Private Function Decompile() As AppEnums.StatusMessage
+        Dim status As AppEnums.StatusMessage = StatusMessage.Success
 
-		Me.theSkipCurrentModelIsActive = False
+        Me.theSkipCurrentModelIsActive = False
 
-		Me.theDecompiledQcFiles.Clear()
-		Me.theDecompiledFirstRefSmdFiles.Clear()
-		Me.theDecompiledFirstLodSmdFiles.Clear()
-		Me.theDecompiledPhysicsFiles.Clear()
-		Me.theDecompiledVtaFiles.Clear()
-		Me.theDecompiledFirstBoneAnimSmdFiles.Clear()
-		Me.theDecompiledVrdFiles.Clear()
-		Me.theDecompiledDeclareSequenceQciFiles.Clear()
-		Me.theDecompiledFirstTextureBmpFiles.Clear()
-		Me.theDecompiledLogFiles.Clear()
-		Me.theDecompiledFirstDebugFiles.Clear()
+        Me.theDecompiledQcFiles.Clear()
+        Me.theDecompiledFirstRefSmdFiles.Clear()
+        Me.theDecompiledFirstLodSmdFiles.Clear()
+        Me.theDecompiledPhysicsFiles.Clear()
+        Me.theDecompiledVtaFiles.Clear()
+        Me.theDecompiledFirstBoneAnimSmdFiles.Clear()
+        Me.theDecompiledVrdFiles.Clear()
+        Me.theDecompiledDeclareSequenceQciFiles.Clear()
+        Me.theDecompiledFirstTextureBmpFiles.Clear()
+        Me.theDecompiledLogFiles.Clear()
+        Me.theDecompiledFirstDebugFiles.Clear()
 
-		Dim mdlPathFileName As String
-		mdlPathFileName = TheApp.Settings.DecompileMdlPathFileName
-		If File.Exists(mdlPathFileName) Then
-			Me.theInputMdlPathName = FileManager.GetPath(mdlPathFileName)
-		ElseIf Directory.Exists(mdlPathFileName) Then
-			Me.theInputMdlPathName = mdlPathFileName
-		End If
+        Dim mdlPathFileName As String
+        mdlPathFileName = TheApp.Settings.DecompileMdlPathFileName
+        If File.Exists(mdlPathFileName) Then
+            Me.theInputMdlPathName = FileManager.GetPath(mdlPathFileName)
+        ElseIf Directory.Exists(mdlPathFileName) Then
+            Me.theInputMdlPathName = mdlPathFileName
+        End If
 
-		Dim progressDescriptionText As String
-		progressDescriptionText = "Decompiling with " + TheApp.GetProductNameAndVersion() + ": "
+        Dim progressDescriptionText As String
+        progressDescriptionText = "Decompiling with " + TheApp.GetProductNameAndVersion() + ": "
 
-		Try
-			If Me.theInputMdlPathName = "" Then
-				'Can get here if mdlPathFileName exists, but only with parts of the path using "Length8.3" names.
-				'Somehow when drag-dropping such a pathFileName, even though Windows shows full names in the path, Crowbar shows it with "Length8.3" names.
-				progressDescriptionText += """" + mdlPathFileName + """"
+        Try
+            If Me.theInputMdlPathName = "" Then
+                'Can get here if mdlPathFileName exists, but only with parts of the path using "Length8.3" names.
+                'Somehow when drag-dropping such a pathFileName, even though Windows shows full names in the path, Crowbar shows it with "Length8.3" names.
+                progressDescriptionText += """" + mdlPathFileName + """"
                 Console.WriteLine(progressDescriptionText + " ...")
                 Console.WriteLine()
                 Console.WriteLine("ERROR: Failed because actual path is too long.")
@@ -1048,52 +1048,52 @@ Public Class Decompiler
             Console.WriteLine(fileName)
 
             If Not Me.theFirstDecompiledFileHasBeenAdded AndAlso File.Exists(pathFileName) Then
-				Dim relativePathFileName As String
-				relativePathFileName = FileManager.GetRelativePathFileName(Me.theOutputPath, pathFileName)
+                Dim relativePathFileName As String
+                relativePathFileName = FileManager.GetRelativePathFileName(Me.theOutputPath, pathFileName)
 
-				If Me.theDecompiledFileType = DecompiledFileType.ReferenceMesh Then
-					Me.theDecompiledFirstRefSmdFiles.Add(relativePathFileName)
-				ElseIf Me.theDecompiledFileType = DecompiledFileType.LodMesh Then
-					Me.theDecompiledFirstLodSmdFiles.Add(relativePathFileName)
-				ElseIf Me.theDecompiledFileType = DecompiledFileType.BoneAnimation Then
-					Me.theDecompiledFirstBoneAnimSmdFiles.Add(relativePathFileName)
-				ElseIf Me.theDecompiledFileType = DecompiledFileType.PhysicsMesh Then
-					Me.theDecompiledPhysicsFiles.Add(relativePathFileName)
-				ElseIf Me.theDecompiledFileType = DecompiledFileType.TextureBmp Then
-					Me.theDecompiledFirstTextureBmpFiles.Add(relativePathFileName)
-				ElseIf Me.theDecompiledFileType = DecompiledFileType.Debug Then
-					Me.theDecompiledFirstDebugFiles.Add(relativePathFileName)
-				End If
+                If Me.theDecompiledFileType = DecompiledFileType.ReferenceMesh Then
+                    Me.theDecompiledFirstRefSmdFiles.Add(relativePathFileName)
+                ElseIf Me.theDecompiledFileType = DecompiledFileType.LodMesh Then
+                    Me.theDecompiledFirstLodSmdFiles.Add(relativePathFileName)
+                ElseIf Me.theDecompiledFileType = DecompiledFileType.BoneAnimation Then
+                    Me.theDecompiledFirstBoneAnimSmdFiles.Add(relativePathFileName)
+                ElseIf Me.theDecompiledFileType = DecompiledFileType.PhysicsMesh Then
+                    Me.theDecompiledPhysicsFiles.Add(relativePathFileName)
+                ElseIf Me.theDecompiledFileType = DecompiledFileType.TextureBmp Then
+                    Me.theDecompiledFirstTextureBmpFiles.Add(relativePathFileName)
+                ElseIf Me.theDecompiledFileType = DecompiledFileType.Debug Then
+                    Me.theDecompiledFirstDebugFiles.Add(relativePathFileName)
+                End If
 
-				Me.theFirstDecompiledFileHasBeenAdded = True
-			End If
-			'TheApp.SmdFileNames.Add(pathFileName)
+                Me.theFirstDecompiledFileHasBeenAdded = True
+            End If
+            'TheApp.SmdFileNames.Add(pathFileName)
 
-			Dim model As SourceModel
-			model = CType(sender, SourceModel)
-			If Me.CancellationPending Then
-				'status = StatusMessage.Canceled
-				model.WritingIsCanceled = True
-				'ElseIf Me.theSkipCurrentModelIsActive Then
-				'	'status = StatusMessage.Skipped
-				'	model.WritingSingleFileIsCanceled = True
-			End If
-		Else
-			Dim progressUnhandled As Integer = 4242
-		End If
-	End Sub
+            Dim model As SourceModel
+            model = CType(sender, SourceModel)
+            If Me.CancellationPending Then
+                'status = StatusMessage.Canceled
+                model.WritingIsCanceled = True
+                'ElseIf Me.theSkipCurrentModelIsActive Then
+                '	'status = StatusMessage.Skipped
+                '	model.WritingSingleFileIsCanceled = True
+            End If
+        Else
+            Dim progressUnhandled As Integer = 4242
+        End If
+    End Sub
 
 #End Region
 
 #Region "Data"
 
-	Private theSkipCurrentModelIsActive As Boolean
-	Private theInputMdlPathName As String
-	Private theOutputPath As String
-	Private theModelOutputPath As String
-	Private theOutputPathOrModelOutputFileName As String
+    Private theSkipCurrentModelIsActive As Boolean
+    Private theInputMdlPathName As String
+    Private theOutputPath As String
+    Private theModelOutputPath As String
+    Private theOutputPathOrModelOutputFileName As String
 
-	Private theLogFileStream As StreamWriter
+    Private theLogFileStream As StreamWriter
 
 	Private theDecompiledQcFiles As BindingListEx(Of String)
 	Private theDecompiledFirstRefSmdFiles As BindingListEx(Of String)
